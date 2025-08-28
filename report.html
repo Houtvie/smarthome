@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMARTHOMES-MALL Reports</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Inventory Reports</h1>
+        <nav>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="product.html">Products</a>
+            <a href="pos.htm">Sales</a>
+            <button id="logoutButton">Logout</button>
+        </nav>
+    </header>
+
+    <main>
+        <div id="userRole" style="display:none;"></div>
+
+        <section id="filters" class="card">
+            <h2>Filters</h2>
+            <label for="reportType">Report Type:</label>
+            <select id="reportType">
+                <option value="topSelling">Top 10 Selling Products</option>
+                <option value="salesHistory">Sales History</option>
+                <option value="inventoryLevels">Inventory Levels</option>
+                <option value="lowStock">Low Stock Items</option>
+            </select>
+
+            <label for="startDate">Start Date:</label>
+            <input type="date" id="startDate">
+
+            <label for="endDate">End Date:</label>
+            <input type="date" id="endDate">
+
+            <label for="productFilter">Product Name (for Sales History):</label>
+            <input type="text" id="productFilter" placeholder="Optional product name">
+
+            <button id="generateReport">Generate Report</button>
+        </section>
+
+        <section id="reportOutput" class="card">
+            <h2>Generated Report</h2>
+            <div id="reportContent">
+                <!-- Report data will be loaded here -->
+            </div>
+            <canvas id="reportChart" style="display:none;"></canvas>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2023 SMARTHOMES-MALL Inventory Management</p>
+    </footer>
+
+    <script>
+        // Firebase Configuration (replace with your actual config)
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const userRoleElement = document.getElementById('userRole');
+        const reportTypeSelect = document.getElementById('reportType');
+        const startDateInput = document.getElementById('startDate');
+        const endDateInput = document.getElementById('endDate');
+        const productFilterInput = document.getElementById('productFilter');
+        const generateReportButton = document.getElementById('generateReport');
+        const reportContentDiv = document.getElementById('reportContent');
+        const reportChartCanvas = document.getElementById('reportChart');
+        let chartInstance = null; // To store the Chart.js instance
+
+        // Dummy User Role (replace with actual authentication and role fetching)
+        // For demonstration, assume 'stockManager' or 'customerCare'
+        // In a real app, this would come from user session/authentication.
+        const currentUserRole = 'stockManager'; // or 'customerCare'
+        userRoleElement.textContent = currentUserRole;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            applyUserRolePermissions();
+            loadReports(); // Load default reports on page load
+        });
+
+        function applyUserRolePermissions() {
+            const role = userRoleElement.textContent;
+            if (role === 'customerCare') {
+                // Limit report options for Customer Care
+                reportTypeSelect.querySelectorAll('option').forEach(option => {
+                    if (!['salesHistory', 'inventoryLevels'].includes(option.value)) {
+                        option.remove();
+                    }
+                });
+                // Hide product filter as it's primarily for detailed sales history by product
+                productFilterInput.style.display = 'none';
+                document.querySelector('label[for="productFilter"]').style.display = 'none';
+            }
+        }
+
+        generateReportButton.addEventListener('click', loadReports);
+
+        async function loadReports() {
+            reportContentDiv.innerHTML = '<p>Generating report...</p>';
+            if (chartInstance) {
+                chartInstance.destroy(); // Destroy previous chart instance
+                reportChartCanvas.style.display = 'none';
+            }
+
+            const reportType = reportTypeSelect.value;
+            const startDate = startDateInput.value ? new Date(startDateInput.value) : null;
+            const endDate = endDateInput.value ? new Date(endDateInput.value) : null;
+            const productFilter = productFilterInput.value.toLowerCase();
+            const role = userRoleElement.textContent;
+
+            switch (reportType) {
+                case 'topSelling':
+                    await getTopSellingProducts(startDate, endDate);
+                    break;
+                case 'salesHistory':
+                    await getSalesHistory(startDate, endDate, productFilter, role);
+                    break;
+                case 'inventoryLevels':
+                    await getInventoryLevels(role);
+                    break;
+                case 'lowStock':
+                    if (role === 'stockManager') {
+                        await getLowStockItems();
+                    } else {
+                        reportContentDiv.innerHTML = '<p>You do not have permission to view low stock items.</p>';
+                    }
+                    break;
+                default:
+                    reportContentDiv.innerHTML = '<p>Please select a report type.</p>';
+            }
+        }
+
+        async function getTopSellingProducts(startDate, endDate) {
+            let salesRef = db.collection('sales');
+            if (startDate) {
+                salesRef = salesRef.where('saleDate', '>=', firebase.firestore.Timestamp.fromDate(startDate));
+            }
+            if (endDate) {
+                salesRef = salesRef.where('saleDate', '<=', firebase.firestore.Timestamp.fromDate(endDate));
+            }
+
+            const snapshot = await salesRef.get();
+            const productSales = {};
+
+            snapshot.forEach(doc => {
+                const sale = doc.data();
+                sale.products.forEach(item => {
+                    const productId = item.productId;
+                    const quantity = item.quantity;
+                    productSales[productId] = (productSales[productId] || 0) + quantity;
+                });
+            });
+
+            const sortedProducts = Object.entries(productSales)
+                .sort(([, a], [, b]) => b - a)
+                .slice(0, 10);
+
+            let html = '<h3>Top 10 Selling Products</h3>';
+            if (sortedProducts.length === 0) {
+                html += '<p>No sales data found for this period.</p>';
+            } else {
+                html += '<table><thead><tr><th>Product ID</th><th>Units Sold</th></tr></thead><tbody>';
+                for (const [productId, unitsSold] of sortedProducts) {
+                    // Fetch product name from 'products' collection
+                    const productDoc = await db.collection('products').doc(productId).get();
+                    const productName = productDoc.exists ? productDoc.data().name : 'Unknown Product';
+                    html += `<tr><td>${productName} (${productId})</td><td>${unitsSold}</td></tr>`;
+                }
+                html += '</tbody></table>';
+
+                // Chart for Top Selling Products
+                const labels = sortedProducts.map(([productId,]) => productId);
+                const data = sortedProducts.map(([, unitsSold]) => unitsSold);
+
+                chartInstance = new Chart(reportChartCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Units Sold',
+                            data: data,
+                            backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+                reportChartCanvas.style.display = 'block';
+            }
+            reportContentDiv.innerHTML = html;
+        }
+
+        async function getSalesHistory(startDate, endDate, productFilter, role) {
+            let salesRef = db.collection('sales').orderBy('saleDate', 'desc');
+            if (startDate) {
+                salesRef = salesRef.where('saleDate', '>=', firebase.firestore.Timestamp.fromDate(startDate));
+            }
+            if (endDate) {
+                salesRef = salesRef.where('saleDate', '<=', firebase.firestore.Timestamp.fromDate(endDate));
+            }
+
+            const snapshot = await salesRef.get();
+            let html = '<h3>Sales History</h3>';
+
+            if (snapshot.empty) {
+                html += '<p>No sales data found for this period.</p>';
+            } else {
+                html += '<table><thead><tr><th>Sale ID</th><th>Date</th><th>Customer</th><th>Total Amount</th><th>Products</th></tr></thead><tbody>';
+                for (const doc of snapshot.docs) {
+                    const sale = doc.data();
+                    const saleDate = sale.saleDate.toDate().toLocaleString();
+                    const customerName = role === 'stockManager' && sale.customerId ?
+                        (await db.collection('customers').doc(sale.customerId).get()).data()?.name || 'N/A' : 'N/A'; // Only show for Stock Manager
+                    const productsList = [];
+
+                    for (const item of sale.products) {
+                        const productDoc = await db.collection('products').doc(item.productId).get();
+                        const productName = productDoc.exists ? productDoc.data().name : 'Unknown Product';
+
+                        if (!productFilter || productName.toLowerCase().includes(productFilter)) {
+                            productsList.push(`${productName} (x${item.quantity}) - $${item.price.toFixed(2)}`);
+                        }
+                    }
+
+                    if (productsList.length > 0) {
+                        html += `<tr>
+                            <td>${doc.id}</td>
+                            <td>${saleDate}</td>
+                            <td>${customerName}</td>
+                            <td>$${sale.totalAmount.toFixed(2)}</td>
+                            <td>${productsList.join('<br>')}</td>
+                        </tr>`;
+                    }
+                }
+                html += '</tbody></table>';
+            }
+            reportContentDiv.innerHTML = html;
+        }
+
+        async function getInventoryLevels(role) {
+            const snapshot = await db.collection('products').get();
+            let html = '<h3>Current Inventory Levels</h3>';
+
+            if (snapshot.empty) {
+                html += '<p>No products found in inventory.</p>';
+            } else {
+                html += '<table><thead><tr><th>Product ID</th><th>Product Name</th><th>Current Stock</th>';
+                if (role === 'stockManager') {
+                    html += '<th>Supplier</th><th>Cost Price</th>';
+                }
+                html += '</tr></thead><tbody>';
+
+                for (const doc of snapshot.docs) {
+                    const product = doc.data();
+                    const supplierName = role === 'stockManager' && product.supplierId ?
+                        (await db.collection('suppliers').doc(product.supplierId).get()).data()?.name || 'N/A' : 'N/A';
+
+                    html += `<tr>
+                        <td>${doc.id}</td>
+                        <td>${product.name}</td>
+                        <td>${product.stockQuantity}</td>`;
+                    if (role === 'stockManager') {
+                        html += `<td>${supplierName}</td>
+                                <td>$${product.costPrice ? product.costPrice.toFixed(2) : 'N/A'}</td>`;
+                    }
+                    html += `</tr>`;
+                }
+                html += '</tbody></table>';
+            }
+            reportContentDiv.innerHTML = html;
+        }
+
+        async function getLowStockItems() {
+            const snapshot = await db.collection('products').where('stockQuantity', '<=', 10).get(); // Assuming low stock is <= 10
+            let html = '<h3>Low Stock Items (Quantity &le; 10)</h3>';
+
+            if (snapshot.empty) {
+                html += '<p>No items currently at low stock levels.</p>';
+            } else {
+                html += '<table><thead><tr><th>Product ID</th><th>Product Name</th><th>Current Stock</th><th>Supplier</th></tr></thead><tbody>';
+                for (const doc of snapshot.docs) {
+                    const product = doc.data();
+                    const supplierName = product.supplierId ?
+                        (await db.collection('suppliers').doc(product.supplierId).get()).data()?.name || 'N/A' : 'N/A';
+                    html += `<tr>
+                        <td>${doc.id}</td>
+                        <td>${product.name}</td>
+                        <td>${product.stockQuantity}</td>
+                        <td>${supplierName}</td>
+                    </tr>`;
+                }
+                html += '</tbody></table>';
+            }
+            reportContentDiv.innerHTML = html;
+        }
+
+        // Logout functionality (placeholder)
+        document.getElementById('logoutButton').addEventListener('click', () => {
+            alert('Logging out...');
+            // Implement Firebase signOut here
+            window.location.href = 'login.html'; // Redirect to login page
+        });
+
+    </script>
+</body>
+</html>

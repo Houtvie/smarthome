@@ -1,0 +1,209 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f7f6;
+    color: #333;
+}
+
+header {
+    background-color: #1A3C6E;
+    color: #ecf0f1;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header h1 {
+    margin: 0;
+}
+
+nav a, #logoutButton {
+    color: #ecf0f1;
+    text-decoration: none;
+    margin-left: 1.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+nav a:hover, #logoutButton:hover {
+    background-color: #34495e;
+}
+
+#logoutButton {
+    background-color: #1A3C6E;
+    border: none;
+    cursor: pointer;
+}
+
+#logoutButton:hover {
+    background-color: #c0392b;
+}
+
+main {
+    padding: 2rem;
+    display: grid;
+    gap: 2rem;
+    grid-template-columns: 1fr;
+    max-width: 1200px;
+    margin: 2rem auto;
+}
+
+.card {
+    background-color: #fff;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.card h2 {
+    color: #1A3C6E;
+    margin-top: 0;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+#filters label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+}
+
+#filters input[type="date"],
+#filters input[type="text"],
+#filters select,
+#filters button {
+    width: calc(100% - 20px);
+    padding: 0.8rem;
+    margin-bottom: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1rem;
+}
+
+#filters button {
+    background-color: #1A3C6E;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    width: auto; /* Adjust width for the button */
+    padding: 0.8rem 1.5rem;
+}
+
+#filters button:hover {
+    background-color: #2980b9;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1.5rem;
+}
+
+table th, table td {
+    border: 1px solid #ddd;
+    padding: 0.8rem;
+    text-align: left;
+}
+
+table th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+    color: #555;
+}
+
+table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+table tr:hover {
+    background-color: #f1f1f1;
+}
+
+footer {
+    text-align: center;
+    padding: 1.5rem;
+    background-color: #1A3C6E;
+    color: #ecf0f1;
+    margin-top: 2rem;
+}
+
+/* Responsive adjustments */
+@media (min-width: 768px) {
+    main {
+        grid-template-columns: 1fr 2fr; /* Filters on left, report on right */
+    }
+}
+
+/* Styling for the overall header layout */
+header {
+    background-color: #f8f8f8; /* A light background for the header */
+    padding: 10px 20px;
+    display: flex; /* Use flexbox to align items */
+    justify-content: space-between; /* Space out the logo/title and navigation */
+    align-items: center; /* Vertically center items */
+    border-bottom: 1px solid #eee; /* A subtle separator */
+}
+
+/* Container for the logo and main title */
+.header-main {
+    display: flex;
+    align-items: center;
+    gap: 15px; /* Space between logo and title */
+}
+
+/* Styling for the logo container (if needed for padding/background) */
+.logo-container {
+    /* Optional: if you want a specific background or border around the logo */
+    / background-color: white; 
+    / border-radius: 5px; 
+    / padding: 5px;     
+}
+
+/* Styling for the actual logo image */
+.dashboard-logo {
+    max-width: 80px;  /* Adjust this to control the logo size */
+    height: auto;     /* Maintain aspect ratio */
+    display: block;   /* Ensures proper spacing and sizing */
+    /* If your logo has transparent background, you can set a background on its container */
+}
+
+/* Styling for the main dashboard title */
+header h1 {
+    margin: 0; /* Remove default margin from h1 */
+    font-size: 24px; /* Adjust font size as needed */
+    color: #333; /* Darker color for prominence */
+}
+
+/* Styling for the navigation links */
+header nav ul {
+    list-style: none; /* Remove bullet points */
+    margin: 0;
+    padding: 0;
+    display: flex; /* Arrange links horizontally */
+    gap: 20px; /* Space between navigation items */
+}
+
+header nav ul li a {
+    text-decoration: none; /* Remove underline */
+    color: #007bff; /* A consistent link color */
+    font-weight: bold;
+    padding: 5px 10px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease; /* Smooth hover effect */
+}
+
+header nav ul li a:hover {
+    background-color: #e9ecef; /* Light background on hover */
+}
+
+/* Ensure the main content container respects the header and footer */
+.container {
+    max-width: 1200px; /* Adjust overall width */
+    margin: 0 auto; /* Center the container */
+    padding: 20px;
+}
