@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SMARTHOMES-MALL Dashboard</title>
+    <script src="data/showProducts.js" type="module" defer></script>
     <link rel="stylesheet" href="style.css">
     <!-- Firebase SDK (Make sure to replace with your actual Firebase project configuration) -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -56,6 +57,7 @@
                 <table id="product-table">
                     <thead>
                         <tr>
+                            <th>Product Image</th> 
                             <th>Product Name</th>
                             <th>Stock</th>
                             <th>Price</th>
@@ -70,7 +72,7 @@
         </main>
 
         <footer>
-            <p>&copy; 2023 SMARTHOMES-MALL. All rights reserved.</p>
+            <p>&copy; 2025 SMARTHOMES-MALL. All rights reserved.</p>
         </footer>
     </div>
 
@@ -89,6 +91,38 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore(); // Or firebase.database() for Realtime Database
 
+        /*document.addEventListener('DOMContentLoaded', function() {
+            const authAlert = document.getElementById('auth-alert');
+            const loadingSpinner = document.getElementById('loading-spinner');
+            const addProductForm = document.getElementById('add-product-form');
+            const formAlert = document.getElementById('form-alert');
+
+            // Check user authentication and role
+            const userData = sessionStorage.getItem('smarthomes_user');
+            const isLoggedIn = localStorage.getItem('smarthomes_logged_in');
+            
+            let currentUser = null;
+            let userRole = null;
+
+            if (userData && isLoggedIn === 'true') {
+                currentUser = JSON.parse(userData);
+                userRole = currentUser.role;
+            }
+
+            loadingSpinner.style.display = 'none'; // Hide loading spinner initially
+
+            if (userRole === 'stock-manager') {
+                addProductForm.style.display = 'block'; // Show the form
+                addProductForm.addEventListener('submit', handleAddProduct);
+            } else {
+                authAlert.textContent = 'You do not have permission to access this page. Redirecting to login...';
+                authAlert.style.display = 'block';
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 3000); // Redirect after 3 seconds
+            }
+        });*/
+
         // Function to simulate user login session and role
         // In a real application, this would come from an actual login process
         function getLoggedInUser() {
@@ -101,7 +135,7 @@
             return user;
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
+        /*document.addEventListener('DOMContentLoaded', () => {
             const currentUser = getLoggedInUser();
             const userNameSpan = document.getElementById('user-name');
             const userRoleSpan = document.getElementById('user-role');
@@ -186,9 +220,25 @@
             inventoryValueElement.textContent = `$${totalInventoryValue.toFixed(2)}`;
 
             // Display products in the table
+                        // Display products in the table
             productTableBody.innerHTML = ''; // Clear existing rows
             products.forEach(product => {
                 const row = productTableBody.insertRow();
+
+                // Product Image Cell
+                const imageCell = row.insertCell();
+                if (product.imageUrl) { // Assuming 'imageUrl' is a field in your product data
+                    const img = document.createElement('img');
+                    img.src = product.imageUrl;
+                    img.alt = product.name;
+                    img.style.width = '50px'; // Adjust size as needed
+                    img.style.height = '50px'; // Adjust size as needed
+                    img.style.objectFit = 'cover';
+                    imageCell.appendChild(img);
+                } else {
+                    imageCell.textContent = 'No Image'; // Or a placeholder image
+                }
+
                 row.insertCell().textContent = product.name;
                 row.insertCell().textContent = product.stock;
                 row.insertCell().textContent = `$${product.price.toFixed(2)}`;
@@ -204,6 +254,7 @@
                 actionsCell.appendChild(editButton);
                 actionsCell.appendChild(deleteButton);
             });
+            
 
             // Re-apply role-based access for dynamically added content
             const currentUser = getLoggedInUser();
@@ -236,7 +287,7 @@
             } else {
                 recentSalesCount.textContent = 'No recent sales';
             }
-        }
+        }*/
 
         // You would typically have a 'login.html' for user authentication
         // and 'add-product.html', 'pos.html', 'reports.html' for other functionalities.

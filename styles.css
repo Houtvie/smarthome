@@ -159,9 +159,9 @@ header {
 /* Styling for the logo container (if needed for padding/background) */
 .logo-container {
     /* Optional: if you want a specific background or border around the logo */
-    / background-color: white; 
-    / border-radius: 5px; 
-    / padding: 5px;     
+    background-color: white; 
+    border-radius: 5px; 
+    padding: 5px;     
 }
 
 /* Styling for the actual logo image */

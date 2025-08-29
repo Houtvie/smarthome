@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script type="module" src="data/addproduct.js"></script>
     <style>
         /* General Body & Container */
         body {
@@ -63,7 +64,7 @@
         .form-group input[type="text"],
         .form-group input[type="number"],
         .form-group select,
-        .form-group textarea {
+        .form-group textarea, .display-image-div {
             width: 100%;
             padding: 12px 15px;
             border: 1px solid #e2e8f0;
@@ -81,9 +82,22 @@
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
         }
 
-        .form-group textarea {
+        .form-group textarea{
             min-height: 100px;
             resize: vertical;
+        }
+
+        .display-image-div{
+            height: 100px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .display-image-div img{
+            
+            object-fit: cover;
         }
 
         /* Buttons */
@@ -94,21 +108,30 @@
             margin-top: 30px;
         }
 
-        .btn {
+        .btn{
             padding: 12px 25px;
+            font-size: 15px;
+            display: inline-flex;
+        }
+
+        .btn , .upload-image-btn{
             border: none;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 15px;
             font-weight: 500;
             transition: all 0.3s ease;
             text-decoration: none;
-            display: inline-flex;
             align-items: center;
             gap: 8px;
         }
 
-        .btn-primary {
+        .upload-image-btn{
+            padding: 6px 9px;
+            display: inline;
+            width: 30%;
+        }
+
+        .btn-primary , .upload-image-btn{
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
         }
@@ -201,6 +224,21 @@
                 <label for="description">Description (Optional)</label>
                 <textarea id="description" placeholder="A brief description of the product..."></textarea>
             </div>
+
+            <div class="form-group">
+                <label for="upload-image">Product Image</label>
+                <div class="display-image-div">
+                    <img src="" id="product-image"/>
+                </div>
+                <label class="upload-image-btn" for="upload-image" style="color: #fff;">
+                    <i class="fas fa-file-image"></i> upload image
+                </label>
+                <input type="file" accept="image/jpeg, .png, .gif, .svg, .webp"  placeholder="A brief description of the product..." style="display: none;" id="upload-image"/>
+                
+            </div>
+
+            <br>
+
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-plus"></i> Add Product
                 </button>
@@ -213,111 +251,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-firestore-compat.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-database-compat.min.js"></script>
 
-    <script>
-        // Firebase Configuration (USE YOUR OWN CONFIG HERE)
-        const firebaseConfig = {
-            apiKey: "your-api-key-here",
-            authDomain: "your-project.firebaseapp.com",
-            projectId: "your-project-id",
-            storageBucket: "your-project.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "your-app-id"
-        };
-
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const authAlert = document.getElementById('auth-alert');
-            const loadingSpinner = document.getElementById('loading-spinner');
-            const addProductForm = document.getElementById('add-product-form');
-            const formAlert = document.getElementById('form-alert');
-
-            // Check user authentication and role
-            const userData = sessionStorage.getItem('smarthomes_user');
-            const isLoggedIn = localStorage.getItem('smarthomes_logged_in');
-            
-            let currentUser = null;
-            let userRole = null;
-
-            if (userData && isLoggedIn === 'true') {
-                currentUser = JSON.parse(userData);
-                userRole = currentUser.role;
-            }
-
-            loadingSpinner.style.display = 'none'; // Hide loading spinner initially
-
-            if (userRole === 'stock-manager') {
-                addProductForm.style.display = 'block'; // Show the form
-                addProductForm.addEventListener('submit', handleAddProduct);
-            } else {
-                authAlert.textContent = 'You do not have permission to access this page. Redirecting to dashboard...';
-                authAlert.style.display = 'block';
-                setTimeout(() => {
-                    window.location.href = 'dashboard.html';
-                }, 3000); // Redirect after 3 seconds
-            }
-        });
-
-        async function handleAddProduct(event) {
-            event.preventDefault(); // Prevent default form submission
-
-            const formAlert = document.getElementById('form-alert');
-            formAlert.style.display = 'none'; // Hide previous alerts
-
-            const productName = document.getElementById('product-name').value.trim();
-            const unitPrice = parseFloat(document.getElementById('unit-price').value);
-            const quantityInStock = parseInt(document.getElementById('quantity-in-stock').value, 10);
-            const reorderLevel = parseInt(document.getElementById('reorder-level').value, 10);
-            const category = document.getElementById('category').value;
-            const description = document.getElementById('description').value.trim();
-
-            // Basic Form Validation
-            if (!productName || isNaN(unitPrice) || isNaN(quantityInStock) || isNaN(reorderLevel) || !category) {
-                showAlert('Please fill in all required fields with valid values.', 'danger');
-                return;
-            }
-            if (unitPrice < 0 || quantityInStock < 0 || reorderLevel < 0) {
-                showAlert('Price, quantity, and reorder level cannot be negative.', 'danger');
-                return;
-            }
-
-            // Create a new product object
-            const newProduct = {
-                name: productName,
-                unitPrice: unitPrice,
-                quantityInStock: quantityInStock,
-                reorderLevel: reorderLevel,
-                category: category,
-                description: description,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(), // Timestamp for creation
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()  // Timestamp for last update
-            };
-
-            try {
-                // Add product to Firestore 'products' collection
-                const docRef = await db.collection('products').add(newProduct);
-                console.log("Document written with ID: ", docRef.id);
-
-                showAlert('Product added successfully! Redirecting to dashboard...', 'success');
-                // Redirect to dashboard after a short delay
-                setTimeout(() => {
-                    window.location.href = 'dashboard.html';
-                }, 2000);
-
-            } catch (e) {
-                console.error("Error adding document: ", e);
-                showAlert('Failed to add product. Please try again.', 'danger');
-            }
-        }
-
-        function showAlert(message, type) {
-            const formAlert = document.getElementById('form-alert');
-            formAlert.textContent = message;
-            formAlert.className = `alert alert-${type}`; // Set class for styling
-            formAlert.style.display = 'block';
-        }
-    </script>
+    <script src="scripts/product.js" type="module"></script>
 </body>
 </html>

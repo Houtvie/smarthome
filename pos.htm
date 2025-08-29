@@ -516,10 +516,10 @@
                 checkoutButton.addEventListener('click', completeSale);
                 updateCartSummary(); // Initial cart summary
             } else {
-                authAlert.textContent = 'You do not have permission to access this page. Redirecting to dashboard...';
+                authAlert.textContent = 'You do not have permission to access this page. Redirecting to login...';
                 authAlert.style.display = 'block';
                 setTimeout(() => {
-                    window.location.href = 'dashboard.html';
+                    window.location.href = 'login.html';
                 }, 3000); // Redirect after 3 seconds
             }
         });
